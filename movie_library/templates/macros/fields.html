@@ -1,0 +1,13 @@
+{% macro render_text_field(field) %}
+<div class="form__group">
+  {{ field.label(class_="form_label") }}
+  {{ field(class_="form__field") }}
+
+  {% for error in field.errors %}
+      <span class="form__error">{{ error }}</span>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+<!-- in field.label(class_="form_label") is not required to pass a class -->
+<!-- also field is gonna be each of the fields defined in forms.py -->
