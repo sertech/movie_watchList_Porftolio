@@ -7,6 +7,7 @@ from flask import (
     request,
     current_app,
     url_for,
+    abort,
 )
 from movie_library.forms import MovieForm  #! flask-wtf usage
 from movie_library.models import Movie  #! @dataclass usage
@@ -19,7 +20,10 @@ pages = Blueprint(
 
 @pages.route("/")
 def index():
-    return render_template("index.html", title="Movies Watchlist")
+    movie_data = current_app.db.movie.find({})  # ({}) means get all the data
+    # with list comprehension we will create a object of type movie for each the of elements in movie_data
+    movies = [Movie(**movie) for movie in movie_data]
+    return render_template("index.html", title="Movies Watchlist", movies_data=movies)
 
 
 @pages.route("/add", methods=["GET", "POST"])
@@ -45,6 +49,27 @@ def add_movie():
     return render_template(
         "new_movie.html", title="Movies Watchlist - Add Movie", form=form
     )
+
+
+@pages.get("/movie/<string:_id>")
+def movie(_id: str):
+    movie_data = current_app.db.movie.find_one({"_id": _id})
+    if not movie_data:
+        abort(404)
+    movie = Movie(**movie_data)
+    return render_template("movie_details.html", movie=movie)
+
+
+# for this there are two solutions
+# 1) @pages.get("/movie/<string:_id>/rate/<int:rating>") /movie/bless2540/rate/4
+# 2) the other is to receive it as query parameter /movie/<string:_id>/rate?rating=4
+@pages.get("/movie/<string:_id>/rate")
+def rate_movie(_id):
+    rating = int(request.args.get("rating"))
+    current_app.db.movie.update_one(
+        {"_id": _id}, {"$set": {"rating": rating}}
+    )  # we use _id to find the record and $set :{what to change}
+    return redirect(url_for(".movie", _id=_id))
 
 
 @pages.get("/toggle-theme")
