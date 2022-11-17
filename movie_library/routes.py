@@ -1,3 +1,4 @@
+import datetime
 import uuid
 from flask import (
     Blueprint,
@@ -69,6 +70,15 @@ def rate_movie(_id):
     current_app.db.movie.update_one(
         {"_id": _id}, {"$set": {"rating": rating}}
     )  # we use _id to find the record and $set :{what to change}
+    return redirect(url_for(".movie", _id=_id))
+
+
+@pages.get("/movie/<string:_id>/watch")
+def watch_today(_id):
+    current_app.db.movie.update_one(
+        {"_id": _id}, {"$set": {"last_watched": datetime.datetime.today()}}
+    )
+    # we update the movie and go bac to where we started
     return redirect(url_for(".movie", _id=_id))
 
 
