@@ -1,6 +1,6 @@
 {% macro render_text_field(field) %}
 <div class="form__group">
-  {{ field.label(class_="form_label") }}
+  {{ field.label(class_="form__label") }}
   {{ field(class_="form__field") }}
 
   {% for error in field.errors %}
@@ -11,3 +11,16 @@
 
 <!-- in field.label(class_="form_label") is not required to pass a class -->
 <!-- also field is gonna be each of the fields defined in forms.py -->
+
+
+<!--! macro for movie editing-->
+{% macro render_area_field(field) %}
+<div class="form__group">
+  {{ field.label(class_="form__label") }}
+  {{ field(rows=4, class_="form__field", style="resize: none") }}
+
+  {% for error in field.errors %}
+      <span class="form__error">{{ error }}</span>
+  {% endfor %}
+</div>
+{% endmacro %}

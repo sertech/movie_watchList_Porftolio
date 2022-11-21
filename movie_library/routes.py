@@ -9,10 +9,17 @@ from flask import (
     current_app,
     url_for,
     abort,
+    flash,  #! t display a message for any error
 )
-from movie_library.forms import MovieForm  #! flask-wtf usage
-from movie_library.models import Movie  #! @dataclass usage
+from movie_library.forms import (
+    ExtendedMovieForm,
+    MovieForm,
+    RegisterForm,
+)  #! flask-wtf usage and register form
+
+from movie_library.models import Movie, User  #! @dataclass usage
 from dataclasses import asdict  #! to pass a dataclass class as dictionary to mongo
+from passlib.hash import pbkdf2_sha256  #! for user registration
 
 pages = Blueprint(
     "pages", __name__, template_folder="templates", static_folder="static"
@@ -27,6 +34,32 @@ def index():
     return render_template("index.html", title="Movies Watchlist", movies_data=movies)
 
 
+@pages.route("/register", methods=["GET", "POST"])
+def register():
+    if session.get("email"):
+        return redirect(url_for(".index"))
+
+    form = RegisterForm()
+    if form.validate_on_submit():
+        user = User(
+            _id=uuid.uuid4().hex,
+            email=form.email.data,
+            password=pbkdf2_sha256.hash(form.password.data),
+        )
+        user_data = current_app.db.user.find_one({"email": form.email.data})
+        if user_data:
+            flash("Email already in use, please pick a different one", "danger")
+            return redirect(url_for(".register"))
+
+        current_app.db.user.insert_one(asdict(user))
+        flash("User registered successfully", "success")
+        return redirect(url_for(".index"))
+
+    return render_template(
+        "register.html", title="Movies Watchlist - Register", form=form
+    )
+
+
 @pages.route("/add", methods=["GET", "POST"])
 def add_movie():
     # 1) create a movieForm object
@@ -39,10 +72,8 @@ def add_movie():
             director=form.director.data,
             year=form.year.data,
         )
-
         # * current_app is the current app that is dealing with the request
         current_app.db.movie.insert_one(asdict(movie))
-
         return redirect(
             url_for(".index")
         )  # . (dot) means the index root of the current blueprint other blueprints may have their own index's
@@ -50,6 +81,27 @@ def add_movie():
     return render_template(
         "new_movie.html", title="Movies Watchlist - Add Movie", form=form
     )
+
+
+@pages.route("/edit/<string:_id>", methods=["GET", "POST"])
+def edit_movie(_id: str):
+    movie = Movie(**current_app.db.movie.find_one({"_id": _id}))
+    #! we are going to pre-populate the extendedForm with the movie that we have in the mongodb with obj=movie its important that the names of the properties are the same
+    form = ExtendedMovieForm(obj=movie)
+    if form.validate_on_submit():
+        movie.title = form.title.data
+        movie.director = form.director.data
+        movie.year = form.year.data
+        movie.cast = form.cast.data
+        movie.series = form.series.data
+        movie.tags = form.tags.data
+        movie.description = form.description.data
+        movie.video_link = form.video_link.data
+
+        current_app.db.movie.update_one({"_id": movie._id}, {"$set": asdict(movie)})
+        return redirect(url_for(".movie", _id=movie._id))
+
+    return render_template("movie_form.html", movie=movie, form=form)
 
 
 @pages.get("/movie/<string:_id>")

@@ -15,11 +15,11 @@
         <a href="#" class="nav__link">
           <span class="nav__item">Log in</span>
         </a>
-        <a href="#" class="nav__link">
+        <a href="{{ url_for('pages.register') }}" class="nav__link {{ 'nav__link--active' if request.path == url_for('pages.register') }}">
           <span class="nav__item">Register</span>
         </a>
       {% else %}
-        <a href="" class="nav__link {{ 'nav__link--active' if request.path == url_for('pages.index') }}">
+        <a href="{{ url_for('pages.index') }}" class="nav__link {{ 'nav__link--active' if request.path == url_for('pages.index') }}">
           <span class="nav__item">Movies</span>
         </a>
         <a href="#" class="nav__link">

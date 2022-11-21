@@ -30,7 +30,7 @@
             {% else %}
               <p><a href="{{ url_for('pages.watch_today', _id=movie._id ) }}" class="watched__link">Not watched yet</a></p>
             {% endif %}
-            <a href="#" class="movie__edit">Edit {{ pencil("pencil") }}</a>
+            <a href="{{ url_for('pages.edit_movie', _id=movie._id) }}" class="movie__edit">Edit {{ pencil("pencil") }}</a>
           </div>
         </div>
         <div class="header__row">
@@ -62,8 +62,8 @@
           <div class="movie__casting">
             <h2>Casting</h2>
             <ul class="list">
-              {% for movie_in_series in movie.series %}
-                <li class="list__item">{{ movie_in_series }}</li>
+              {% for actor in movie.cast %}
+                <li class="list__item">{{ actor }}</li>
               {% endfor %}
             </ul>
           </div>
