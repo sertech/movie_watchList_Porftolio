@@ -12,8 +12,8 @@
     </a> 
     <nav class="nav">
       {% if not email %}
-        <a href="#" class="nav__link">
-          <span class="nav__item">Log in</span>
+        <a href="{{ url_for('pages.login') }}" class="nav__link">
+          <span class="nav__item {{ 'nav__link--active' if request.path == url_for('pages.login') }}">Log in</span>
         </a>
         <a href="{{ url_for('pages.register') }}" class="nav__link {{ 'nav__link--active' if request.path == url_for('pages.register') }}">
           <span class="nav__item">Register</span>
@@ -26,6 +26,7 @@
           <span class="nav__item">Log out</span>
         </a>
       {% endif %}
+
       <!--! when the function in url_for doesn't have parameters, the variables we pass are treated as query parameters  -->
       <a href="{{ url_for('pages.toggle_theme', current_page=request.path, query_test="test string") }}" class="nav__link">
         <span class="nav__item">
@@ -36,6 +37,7 @@
           {% endif %}
         </span>
       </a>
+      
     </nav>  
   </div>
 </div>

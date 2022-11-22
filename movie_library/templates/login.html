@@ -8,7 +8,7 @@
 
 
 {% block main_content %}
-  <form class="form" name="register" method="post" novalidate>
+  <form class="form" name="login" method="post" novalidate>
     <!-- this defines the messages list -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for category, message in messages %}
@@ -21,10 +21,9 @@
 
       {{ render_text_field(form.email) }}
       {{ render_text_field(form.password) }}
-      {{ render_text_field(form.confirm_password) }}
 
       <span class="form__small">
-        Already have an account? <a href="{{ url_for('pages.login' ) }}" class="form__link">Log in here</a>
+        Don't have an account? <a href="{{ url_for('pages.register') }}" class="form__link">Register here</a>
       </span>
 
       <div>

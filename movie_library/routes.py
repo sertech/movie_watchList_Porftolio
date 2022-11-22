@@ -15,6 +15,7 @@ from movie_library.forms import (
     ExtendedMovieForm,
     MovieForm,
     RegisterForm,
+    LoginForm,
 )  #! flask-wtf usage and register form
 
 from movie_library.models import Movie, User  #! @dataclass usage
@@ -53,11 +54,34 @@ def register():
 
         current_app.db.user.insert_one(asdict(user))
         flash("User registered successfully", "success")
-        return redirect(url_for(".index"))
+        return redirect(url_for(".login"))
 
     return render_template(
         "register.html", title="Movies Watchlist - Register", form=form
     )
+
+
+@pages.route("/login", methods=["GET", "POST"])
+def login():
+    if session.get("email"):
+        return redirect(url_for(".index"))
+
+    form = LoginForm()
+
+    if form.validate_on_submit():
+        user_data = current_app.db.user.find_one({"email": form.email.data})
+        if not user_data:
+            flash("Login credentials not correct", category="danger")
+            return redirect(url_for(".login"))
+
+        user = User(**user_data)
+        if user and pbkdf2_sha256.verify(form.password.data, user.password):
+            session["user_id"] = user._id
+            session["email"] = user.email
+            return redirect(url_for(".index"))
+        flash("Login credentials not correct", category="danger")
+
+    return render_template("login.html", title="Movies Watchlist - Login", form=form)
 
 
 @pages.route("/add", methods=["GET", "POST"])

@@ -81,3 +81,10 @@ class RegisterForm(FlaskForm):
         ],
     )
     submit = SubmitField("Register")
+
+
+#! login form
+class LoginForm(FlaskForm):
+    email = StringField("Email", validators=[InputRequired(), Email()])
+    password = PasswordField("Password", validators=[InputRequired()])
+    submit = SubmitField("Login")
