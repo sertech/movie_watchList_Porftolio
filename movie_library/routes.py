@@ -1,5 +1,6 @@
 import datetime
 import uuid
+import functools  #! for login required decorator
 from flask import (
     Blueprint,
     render_template,
@@ -27,12 +28,41 @@ pages = Blueprint(
 )
 
 
+def login_required(route):
+    @functools.wraps(route)
+    def route_wrapper(*args, **kwargs):
+        if session.get("email") is None:
+            return redirect(url_for(".login"))
+        return route(*args, **kwargs)
+
+    return route_wrapper
+
+
 @pages.route("/")
+@login_required
 def index():
-    movie_data = current_app.db.movie.find({})  # ({}) means get all the data
+    user_data = current_app.db.user.find_one(
+        {"email": session["email"]}
+    )  # get current user
+    user = User(**user_data)
+    print(user.movies)
+
+    # movie_data = current_app.db.movie.find({})  # ({}) means get all the data
+    movie_data = current_app.db.movie.find(
+        {"_id": {"$in": user.movies}}
+    )  #! find movies by _id where "_id" is in user.movies
+
     # with list comprehension we will create a object of type movie for each the of elements in movie_data
     movies = [Movie(**movie) for movie in movie_data]
     return render_template("index.html", title="Movies Watchlist", movies_data=movies)
+
+
+@pages.route("/logout")
+def logout():
+    session.clear()
+    # del session["user_id"] # to remove a specific user useful in some cases
+    # del session["email"]
+    return redirect(url_for(".login"))
 
 
 @pages.route("/register", methods=["GET", "POST"])
@@ -85,6 +115,7 @@ def login():
 
 
 @pages.route("/add", methods=["GET", "POST"])
+@login_required
 def add_movie():
     # 1) create a movieForm object
     form = MovieForm()
@@ -98,6 +129,12 @@ def add_movie():
         )
         # * current_app is the current app that is dealing with the request
         current_app.db.movie.insert_one(asdict(movie))
+
+        # * add movie to the current user with $push to add to a array record in mongoDB
+        current_app.db.user.update_one(
+            {"_id": session["user_id"]}, {"$push": {"movies": movie._id}}
+        )
+
         return redirect(
             url_for(".index")
         )  # . (dot) means the index root of the current blueprint other blueprints may have their own index's
@@ -108,6 +145,7 @@ def add_movie():
 
 
 @pages.route("/edit/<string:_id>", methods=["GET", "POST"])
+@login_required
 def edit_movie(_id: str):
     movie = Movie(**current_app.db.movie.find_one({"_id": _id}))
     #! we are going to pre-populate the extendedForm with the movie that we have in the mongodb with obj=movie its important that the names of the properties are the same
@@ -141,6 +179,7 @@ def movie(_id: str):
 # 1) @pages.get("/movie/<string:_id>/rate/<int:rating>") /movie/bless2540/rate/4
 # 2) the other is to receive it as query parameter /movie/<string:_id>/rate?rating=4
 @pages.get("/movie/<string:_id>/rate")
+@login_required
 def rate_movie(_id):
     rating = int(request.args.get("rating"))
     current_app.db.movie.update_one(
@@ -150,6 +189,7 @@ def rate_movie(_id):
 
 
 @pages.get("/movie/<string:_id>/watch")
+@login_required
 def watch_today(_id):
     current_app.db.movie.update_one(
         {"_id": _id}, {"$set": {"last_watched": datetime.datetime.today()}}

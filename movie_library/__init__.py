@@ -18,3 +18,5 @@ def create_app():
 
     app.register_blueprint(pages)
     return app
+
+# for heroku we have to check environment variables here we have MONGODB_URI which needs to be in heroku variables
